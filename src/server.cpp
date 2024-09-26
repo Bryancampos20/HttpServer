@@ -6,7 +6,7 @@
 #include <pthread.h>           // Incluye funciones para manejo de hilos (threads).
 #include "request_handler.h"    
 
-#define PORT 8080              // Define el puerto en el que el servidor escuchará.
+#define PORT 1708              // Define el puerto en el que el servidor escuchará.
 #define BACKLOG 10             // Define el número máximo de conexiones en espera.
 #define BUF_SIZE 1024          // Define el tamaño del búfer para leer solicitudes.
 
