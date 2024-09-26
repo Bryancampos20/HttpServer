@@ -11,6 +11,6 @@ COPY . .
 
 RUN make
 
-EXPOSE 8080
+EXPOSE 1708
 
 CMD ["./http_server"]
