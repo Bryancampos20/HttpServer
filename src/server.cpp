@@ -1,113 +1,104 @@
-#include <iostream>            // Biblioteca estándar para entrada y salida
-#include <cstring>            // Biblioteca para manipulación de cadenas
-#include <cstdlib>            // Biblioteca para funciones de conversión y gestión de memoria
-#include <unistd.h>           // Biblioteca para funciones POSIX (como read y write)
-#include <arpa/inet.h>        // Biblioteca para funciones de red (como socket y connect)
-#include <pthread.h>          // Biblioteca para el manejo de hilos
-#include "request_handler.h"   // Archivo de encabezado para el manejo de solicitudes HTTP
+#include <iostream>            
+#include <cstring>              
+#include <cstdlib>             // Incluye funciones para la conversión de datos y la gestión de la memoria.
+#include <unistd.h>            // Incluye funciones para el manejo de llamadas al sistema.
+#include <arpa/inet.h>         // Incluye funciones para manejar direcciones de red.
+#include <pthread.h>           // Incluye funciones para manejo de hilos (threads).
+#include "request_handler.h"    
 
-// Definiciones de constantes
-#define PORT 8080               // Puerto en el que el servidor escucha
-#define BACKLOG 10              // Número máximo de conexiones en espera
-#define BUF_SIZE 1024           // Tamaño del búfer para la lectura de datos
+#define PORT 8080              // Define el puerto en el que el servidor escuchará.
+#define BACKLOG 10             // Define el número máximo de conexiones en espera.
+#define BUF_SIZE 1024          // Define el tamaño del búfer para leer solicitudes.
 
-/**
- * Función que maneja la solicitud de un cliente HTTP.
- * 
- * Esta función es ejecutada en un hilo separado para cada cliente. 
- * Lee la solicitud HTTP del cliente, procesa la solicitud y envía la respuesta.
- * 
- * @param client_socket Puntero al socket del cliente.
- * @return nullptr
- */
 void *handle_request(void *client_socket) {
-    int sock = *(int *)client_socket;  // Desreferencia el puntero al socket del cliente
-    free(client_socket);                // Libera el puntero al socket
-    char buffer[BUF_SIZE];              // Búfer para almacenar la solicitud
-    read(sock, buffer, sizeof(buffer)); // Lee la solicitud del cliente
-    std::cout << "Request received:\n" << buffer << std::endl; // Muestra la solicitud recibida
+    int sock = *(int *)client_socket; // Cast de puntero a entero para obtener el socket del cliente.
+    free(client_socket); // Libera la memoria del puntero al socket del cliente.
+    
+    char buffer[BUF_SIZE]; // Crea un búfer para almacenar la solicitud del cliente.
+    read(sock, buffer, sizeof(buffer)); // Lee la solicitud en el búfer.
+    std::cout << "Request received:\n" << buffer << std::endl; // Muestra la solicitud recibida en la consola.
 
-    std::string session_id;             // Variable para almacenar el ID de sesión
-    char *cookie_header = strstr(buffer, "Cookie: "); // Busca el encabezado de cookies
+    std::string session_id; // Variable para almacenar el ID de sesión.
+    char *cookie_header = strstr(buffer, "Cookie: "); // Busca el encabezado de la cookie en la solicitud.
+    
+    // Verifica si hay una cookie en la solicitud.
     if (cookie_header) {
-        session_id = strstr(cookie_header, "=") + 1; // Obtiene el ID de sesión
-        char *end = strstr(const_cast<char*>(session_id.c_str()), ";");
+        session_id = strstr(cookie_header, "=") + 1; // Extrae el valor de la cookie.
+        char *end = strstr(const_cast<char*>(session_id.c_str()), ";"); // Busca el final del valor de la cookie.
         if (end) {
-            *end = '\0';  // Finaliza la cadena del ID de sesión
+            *end = '\0'; // Si se encuentra un final, termina la cadena.
         }
     } else {
-        session_id = "new_session_id"; // ID de sesión por defecto
+        session_id = "new_session_id"; // ID de sesión por defecto si no hay cookie.
     }
 
-    // Cambia de char* a std::string y procesa la solicitud
+    // Procesa la solicitud y genera una respuesta.
     std::string response = process_request(buffer, session_id.c_str());
-    
-    // Si se genera un nuevo ID de sesión, establece una cookie
+
+    // Si no se recibió un session_id, genera uno nuevo y envía el encabezado de la cookie.
     if (session_id == "new_session_id") {
-        std::string new_session_id = generate_session_id(); 
-        std::string cookie_response = "Set-Cookie: session_id=" + new_session_id + "\r\n";
-        write(sock, cookie_response.c_str(), cookie_response.size()); // Envía la cookie al cliente
+        std::string new_session_id = generate_session_id(); // Genera un nuevo ID de sesión.
+        std::string cookie_response = "HTTP/1.1 200 OK\r\nSet-Cookie: session_id=" + new_session_id + "\r\n"; // Crea la respuesta con la cookie.
+        cookie_response += "Content-Type: text/plain\r\n\r\n"; // Establece el tipo de contenido.
+        cookie_response += response;  // Agrega el cuerpo de la respuesta.
+        write(sock, cookie_response.c_str(), cookie_response.size()); // Envía la respuesta al cliente.
+    } else {
+        // Si ya existe el session_id, responde normalmente.
+        write(sock, response.c_str(), response.size()); // Envía la respuesta al cliente.
     }
 
-    write(sock, response.c_str(), response.size()); // Envía la respuesta al cliente
-    close(sock); // Cierra el socket del cliente
-    return nullptr; // Termina el hilo
+    close(sock); // Cierra el socket del cliente.
+    return nullptr; // Retorna nulo al finalizar el manejo de la solicitud.
 }
 
-/**
- * Función principal del servidor HTTP.
- * 
- * Crea un socket, lo vincula a una dirección y puerto, y comienza a escuchar solicitudes de clientes.
- * Para cada solicitud de cliente, se crea un nuevo hilo que maneja la solicitud.
- * 
- * @return 0 en caso de éxito.
- */
 int main() {
-    int server_fd, *client_socket;  // Descriptores de archivo para el servidor y el cliente
-    struct sockaddr_in address;      // Estructura para almacenar la dirección del servidor
-    int addrlen = sizeof(address);   // Longitud de la dirección
+    int server_fd, *client_socket; // Declara variables para el socket del servidor y del cliente.
+    struct sockaddr_in address; // Estructura para almacenar la dirección del servidor.
+    int addrlen = sizeof(address); // Variable para la longitud de la dirección.
 
-    // Crea el socket
+    // Crea un socket.
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("Socket failed");      // Manejo de errores al crear el socket
-        exit(EXIT_FAILURE);
+        perror("Socket failed"); // Muestra un error si el socket no se puede crear.
+        exit(EXIT_FAILURE); // Finaliza el programa si hay un error.
     }
 
-    // Configura la dirección del servidor
-    address.sin_family = AF_INET;     // Usar IPv4
-    address.sin_addr.s_addr = INADDR_ANY; // Aceptar conexiones en cualquier dirección
-    address.sin_port = htons(PORT);    // Asignar el puerto
+    // Configura la estructura de la dirección del servidor.
+    address.sin_family = AF_INET; // Usa la familia de direcciones IPv4.
+    address.sin_addr.s_addr = INADDR_ANY; // Permite conexiones desde cualquier dirección.
+    address.sin_port = htons(PORT); // Establece el puerto del servidor.
 
-    // Vincula el socket a la dirección y puerto
+    // Asocia el socket a la dirección y puerto.
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        perror("Bind failed");         // Manejo de errores al vincular
-        exit(EXIT_FAILURE);
+        perror("Bind failed"); // Muestra un error si la asociación falla.
+        exit(EXIT_FAILURE); // Finaliza el programa si hay un error.
     }
 
-    // Escucha solicitudes de conexión
+    // Escucha las conexiones entrantes.
     if (listen(server_fd, BACKLOG) < 0) {
-        perror("Listen failed");       // Manejo de errores al escuchar
-        exit(EXIT_FAILURE);
+        perror("Listen failed"); // Muestra un error si la escucha falla.
+        exit(EXIT_FAILURE); // Finaliza el programa si hay un error.
     }
 
-    std::cout << "Server listening on port " << PORT << std::endl; // Indica que el servidor está escuchando
+    std::cout << "Server listening on port " << PORT << std::endl; // Muestra un mensaje indicando que el servidor está escuchando.
 
-    // Bucle principal del servidor
+    // Bucle principal para aceptar conexiones entrantes.
     while (true) {
-        client_socket = (int *)malloc(sizeof(int)); // Asigna memoria para el socket del cliente
-        *client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen); // Acepta una nueva conexión
+        client_socket = (int *)malloc(sizeof(int)); // Reserva memoria para el socket del cliente.
+        *client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen); // Acepta una conexión entrante.
         if (*client_socket < 0) {
-            perror("Accept failed"); // Manejo de errores al aceptar
-            free(client_socket);      // Libera memoria en caso de error
-            continue; // Continúa con la siguiente iteración
+            perror("Accept failed"); // Muestra un error si la aceptación de la conexión falla.
+            free(client_socket); // Libera la memoria del puntero del socket del cliente.
+            continue; // Continúa al siguiente ciclo para aceptar más conexiones.
         }
-        pthread_t thread_id; // Crea un identificador de hilo
-        pthread_create(&thread_id, nullptr, handle_request, client_socket); // Crea un nuevo hilo para manejar la solicitud
-        pthread_detach(thread_id); // Separa el hilo para liberar recursos automáticamente al terminar
+
+        pthread_t thread_id; // Declara un identificador de hilo.
+        pthread_create(&thread_id, nullptr, handle_request, client_socket); // Crea un nuevo hilo para manejar la solicitud del cliente.
+        pthread_detach(thread_id); // Desvincula el hilo, permitiendo que se limpie automáticamente al finalizar.
     }
 
-    return 0; // Finaliza el programa
+    return 0; 
 }
+
 
 
 
