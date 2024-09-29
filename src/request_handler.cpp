@@ -103,6 +103,60 @@ std::string process_request(const std::string &request, const std::string &sessi
         response_stream << "]"; // Cierra el arreglo JSON.
         response_stream << "\nTotal de entradas guardadas: " << entries.size(); // Agrega el conteo de entradas.
         response_stream << "\nSession ID actual: " << session_id; // Agrega el ID de sesión actual.
+
+    } else if (request.find("DELETE") != std::string::npos) {
+
+        // Encuentra el cuerpo de la solicitud
+        std::string::size_type body_start = request.find("\r\n\r\n");
+        if (body_start != std::string::npos) {
+            body_start += 4;
+            std::string body = request.substr(body_start);
+
+            std::string name, email;
+            std::string::size_type name_pos = body.find("\"name\": \"");
+            std::string::size_type email_pos = body.find("\"email\": \"");
+
+            // Extrae nombre y correo si se encuentran
+            if (name_pos != std::string::npos && email_pos != std::string::npos) {
+                name_pos += 9;
+                email_pos += 10;
+                auto name_end = body.find("\"", name_pos);
+                auto email_end = body.find("\"", email_pos);
+
+                if (name_end != std::string::npos && email_end != std::string::npos) {
+                    name = body.substr(name_pos, name_end - name_pos); // Extrae el nombre.
+                    email = body.substr(email_pos, email_end - email_pos); // Extrae el correo electrónico.
+
+                    // Depuración para verificar los datos extraídos.
+                    response_stream << "Debug - Nombre extraído: " << name << "\n";
+                    response_stream << "Debug - Correo extraído: " << email << "\n";
+
+                    bool found = false;
+
+                    response_stream << "Debug - Comenzando la búsqueda de la entrada...\n";
+
+                    // Busca la entrada con el nombre y correo especificados
+                    for (auto it = entries.begin(); it != entries.end(); ++it) {
+                        response_stream << "Debug - Comparando con: " << it->name << ", " << it->email << "\n";
+                        if (strcmp(it->name, name.c_str()) == 0 && strcmp(it->email, email.c_str()) == 0) {
+                            entries.erase(it);
+                            response_stream << "Debug - Entrada encontrada y eliminada.\n";
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    // Construye el cuerpo de la respuesta para una entrada eliminada.
+                    if (found) {
+                        response_stream << "Entrada eliminada: " << name << ", " << email;
+                    } else {
+                        response_stream << "Entrada no encontrada.";
+                    }
+                }
+            }
+        }
+    } else {
+        response_stream << "Solicitud no válida.";
     }
 
     // Construcción del encabezado de respuesta HTTP
