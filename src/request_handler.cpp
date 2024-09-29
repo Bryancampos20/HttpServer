@@ -22,6 +22,8 @@ struct Entry {
 struct UserData {
     std::string name;
     std::string email;
+    std::string updated_name;
+    std::string updated_email;
 };
 
 // Vector que almacena todas las entradas del usuario.
@@ -37,35 +39,49 @@ std::string generate_session_id() {
     return session_id; 
 }
 
-// Función para extraer el nombre y el correo del cuerpo de la solicitud
+#include <string>
+
+// Función para extraer el nombre, correo, updated_name y updated_email del cuerpo de la solicitud
 UserData extract_name_and_email(const std::string& request) {
     UserData userData;
 
     // Encuentra el inicio del cuerpo de la solicitud
     std::string::size_type body_start = request.find("\r\n\r\n");
     if (body_start != std::string::npos) {
-        body_start += 4;
+        body_start += 4; // Salta los saltos de línea
         std::string body = request.substr(body_start);
 
-        // Busca las posiciones de nombre y correo
-        std::string::size_type name_pos = body.find("\"name\": \"");
-        std::string::size_type email_pos = body.find("\"email\": \"");
-
-        // Si se encuentran, extraer los valores
-        if (name_pos != std::string::npos && email_pos != std::string::npos) {
-            name_pos += 9;
-            email_pos += 10;
-            auto name_end = body.find("\"", name_pos);
-            auto email_end = body.find("\"", email_pos);
-
-            if (name_end != std::string::npos && email_end != std::string::npos) {
-                userData.name = body.substr(name_pos, name_end - name_pos);
-                userData.email = body.substr(email_pos, email_end - email_pos);
+        // Función lambda para extraer valor por clave
+        auto extract_value = [&](const std::string& key) -> std::string {
+            std::string::size_type key_pos = body.find(key);
+            if (key_pos == std::string::npos) {
+                return "";
             }
-        }
+            // Encuentra la primera comilla después de la clave
+            key_pos = body.find("\"", key_pos + key.length());
+            if (key_pos == std::string::npos) {
+                return "";
+            }
+            key_pos += 1; // Salta la comilla
+            // Encuentra la comilla de cierre
+            std::string::size_type value_end = body.find("\"", key_pos);
+            if (value_end == std::string::npos) {
+                return "";
+            }
+            return body.substr(key_pos, value_end - key_pos);
+        };
+
+        // Extrae los valores
+        userData.name = extract_value("\"name\":");
+        userData.email = extract_value("\"email\":");
+        userData.updated_name = extract_value("\"updated_name\":");
+        userData.updated_email = extract_value("\"updated_email\":");
     }
+
     return userData;
 }
+
+
 
 // Función para procesar las solicitudes HTTP.
 std::string process_request(const std::string &request, const std::string &session_id) {
@@ -149,6 +165,118 @@ std::string process_request(const std::string &request, const std::string &sessi
             }
         }
 
+    } else if (request.find("UPDATE") != std::string::npos) {
+        // Llamada a la función para extraer nombre, correo, updated_name y updated_email
+        UserData userData = extract_name_and_email(request);
+        
+        // Depuración
+        response_stream << "Debug - Nombre extraído: " << userData.name << "\n";
+        response_stream << "Debug - Correo extraído: " << userData.email << "\n";
+        response_stream << "Debug - updated_name extraído: " << userData.updated_name << "\n";
+        response_stream << "Debug - updated_email extraído: " << userData.updated_email << "\n";
+
+        // Si los datos de usuario fueron extraídos
+        if (!userData.name.empty() && !userData.email.empty() &&
+            !userData.updated_name.empty() && !userData.updated_email.empty()) {
+            
+            bool found = false;
+
+            response_stream << "Debug - Comenzando la búsqueda de la entrada...\n";
+
+            // Busca la entrada con el nombre y correo especificados
+            for (auto it = entries.begin(); it != entries.end(); ++it) {
+                response_stream << "Debug - Comparando con: " << it->name << ", " << it->email << "\n";
+                if (strcmp(it->name, userData.name.c_str()) == 0 &&
+                    strcmp(it->email, userData.email.c_str()) == 0) {
+                    
+                    // Actualiza los campos con los nuevos valores
+                    strncpy(it->name, userData.updated_name.c_str(), NAME_LENGTH - 1);
+                    it->name[NAME_LENGTH - 1] = '\0';
+                    strncpy(it->email, userData.updated_email.c_str(), EMAIL_LENGTH - 1);
+                    it->email[EMAIL_LENGTH - 1] = '\0';
+                    
+                    response_stream << "Debug - Entrada encontrada y actualizada.\n";
+                    found = true;
+                    break;
+                }
+            }
+            // Respuesta final
+            if (found) {
+                response_stream << "Entrada actualizada: " << userData.name << ", " 
+                                << userData.email << " -> " 
+                                << userData.updated_name << ", " 
+                                << userData.updated_email;
+            } else {
+                response_stream << "Entrada no encontrada.";
+            }
+        } else {
+            response_stream << "Formato de datos inválido.";
+        }
+    } else if (request.find("PUT") != std::string::npos) {
+        // Llamada a la función para extraer nombre, correo, updated_name y updated_email
+        UserData userData = extract_name_and_email(request);
+        
+        // Depuración
+        response_stream << "Debug - Nombre extraído: " << userData.name << "\n";
+        response_stream << "Debug - Correo extraído: " << userData.email << "\n";
+        response_stream << "Debug - updated_name extraído: " << userData.updated_name << "\n";
+        response_stream << "Debug - updated_email extraído: " << userData.updated_email << "\n";
+
+        // Si los datos de usuario fueron extraídos
+        if (!userData.name.empty() && !userData.email.empty() &&
+            !userData.updated_name.empty() && !userData.updated_email.empty()) {
+            
+            bool found = false;
+
+            response_stream << "Debug - Comenzando la búsqueda de la entrada...\n";
+
+            // Busca la entrada con el nombre y correo especificados
+            for (auto it = entries.begin(); it != entries.end(); ++it) {
+                response_stream << "Debug - Comparando con: " << it->name << ", " << it->email << "\n";
+                if (strcmp(it->name, userData.name.c_str()) == 0 &&
+                    strcmp(it->email, userData.email.c_str()) == 0) {
+                    
+                    // Actualiza los campos con los nuevos valores
+                    strncpy(it->name, userData.updated_name.c_str(), NAME_LENGTH - 1);
+                    it->name[NAME_LENGTH - 1] = '\0';
+                    strncpy(it->email, userData.updated_email.c_str(), EMAIL_LENGTH - 1);
+                    it->email[EMAIL_LENGTH - 1] = '\0';
+                    
+                    response_stream << "Debug - Entrada encontrada y actualizada.\n";
+                    found = true;
+                    break;
+                }
+            }
+
+            // Si no se encuentra la entrada, la crea
+            if (!found) {
+                if (entries.size() < MAX_ENTRIES) {
+                    Entry new_entry;
+                    strncpy(new_entry.name, userData.updated_name.c_str(), NAME_LENGTH - 1);
+                    new_entry.name[NAME_LENGTH - 1] = '\0';  // Asegura la terminación nula
+                    strncpy(new_entry.email, userData.updated_email.c_str(), EMAIL_LENGTH - 1);
+                    new_entry.email[EMAIL_LENGTH - 1] = '\0';  // Asegura la terminación nula
+                    
+                    // Agrega la nueva entrada al vector
+                    entries.push_back(new_entry);
+
+                    response_stream << "Nueva entrada creada: " 
+                                    << new_entry.name << ", " 
+                                    << new_entry.email;
+                } else {
+                    response_stream << "No se pueden almacenar más entradas.";
+                }
+            } else {
+                // Respuesta final si la entrada fue actualizada
+                response_stream << "Entrada actualizada: " 
+                                << userData.name << ", " 
+                                << userData.email << " -> " 
+                                << userData.updated_name << ", " 
+                                << userData.updated_email;
+            }
+        } else {
+            response_stream << "Formato de datos inválido.";
+        }
     } else {
         response_stream << "Solicitud no válida.";
     }
