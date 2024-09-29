@@ -124,8 +124,8 @@ std::string process_request(const std::string &request, const std::string &sessi
                 auto email_end = body.find("\"", email_pos);
 
                 if (name_end != std::string::npos && email_end != std::string::npos) {
-                    name = body.substr(name_pos, name_end - name_pos); // Extrae el nombre.
-                    email = body.substr(email_pos, email_end - email_pos); // Extrae el correo electrónico.
+                    name = body.substr(name_pos, name_end - name_pos);
+                    email = body.substr(email_pos, email_end - email_pos);
 
                     // Depuración para verificar los datos extraídos.
                     response_stream << "Debug - Nombre extraído: " << name << "\n";
