@@ -74,59 +74,36 @@ std::string process_request(const std::string &request, const std::string &sessi
 
     // Verifica si la solicitud es de tipo POST.
     if (request.find("POST") != std::string::npos) {
-        std::string::size_type body_start = request.find("\r\n\r\n"); // Encuentra el inicio del cuerpo de la solicitud.
-        if (body_start != std::string::npos) { // Asegura que se encontró el cuerpo.
-            body_start += 4; // Avanza el puntero para saltar los saltos de línea.
-            std::string body = request.substr(body_start); // Extrae el cuerpo de la solicitud.
 
-            std::string name, email; // Variables para almacenar el nombre y el correo electrónico.
-            std::string::size_type name_pos = body.find("\"name\": \""); // Busca la posición del nombre en el cuerpo.
-            std::string::size_type email_pos = body.find("\"email\": \""); // Busca la posición del correo electrónico en el cuerpo.
+        UserData userData = extract_name_and_email(request);
 
-            // Verifica que se hayan encontrado ambas posiciones.
-            if (name_pos != std::string::npos && email_pos != std::string::npos) {
-                name_pos += 9; // Ajusta la posición para obtener el valor del nombre.
-                email_pos += 10; // Ajusta la posición para obtener el valor del correo electrónico.
-                auto name_end = body.find("\"", name_pos); // Encuentra el final del nombre.
-                auto email_end = body.find("\"", email_pos); // Encuentra el final del correo electrónico.
+        bool duplicate = false; // Bandera para verificar si hay entradas duplicadas.
 
-                // Verifica que se hayan encontrado ambos finales.
-                if (name_end != std::string::npos && email_end != std::string::npos) {
-                    name = body.substr(name_pos, name_end - name_pos); // Extrae el nombre.
-                    email = body.substr(email_pos, email_end - email_pos); // Extrae el correo electrónico.
-
-                    bool duplicate = false; // Bandera para verificar si hay entradas duplicadas.
-                    
-                    // Verifica si ya existe una entrada con el mismo nombre y correo electrónico.
-                    for (const auto& entry : entries) {
-                        if (strcmp(entry.name, name.c_str()) == 0 && strcmp(entry.email, email.c_str()) == 0) {
-                            duplicate = true; // Marca como duplicado si se encuentra.
-                            break;
-                        }
-                    }
-
-                    // Si no es duplicado y hay espacio para más entradas.
-                    if (!duplicate && entries.size() < MAX_ENTRIES) {
-                        Entry new_entry; // Crea una nueva entrada.
-                        strncpy(new_entry.name, name.c_str(), NAME_LENGTH - 1); // Copia el nombre.
-                        new_entry.name[NAME_LENGTH - 1] = '\0'; // Asegura la terminación nula.
-                        strncpy(new_entry.email, email.c_str(), EMAIL_LENGTH - 1); // Copia el correo electrónico.
-                        new_entry.email[EMAIL_LENGTH - 1] = '\0'; // Asegura la terminación nula.
-                        entries.push_back(new_entry); // Agrega la nueva entrada al vector.
-
-                        // Construye el cuerpo de la respuesta para una entrada guardada.
-                        response_body = "Entrada guardada: " + std::string(new_entry.name) + ", " + new_entry.email;
-                        response_stream << response_body; // Agrega el cuerpo a la respuesta.
-                    } else if (duplicate) {
-                        response_stream << "Entrada duplicada."; // Mensaje para entrada duplicada.
-                    } else {
-                        response_stream << "No se pueden almacenar más entradas."; // Mensaje si no hay espacio para más entradas.
-                    }
-                }
-            } else {
-                response_stream << "Formato de datos inválido."; // Mensaje si el formato es incorrecto.
+        // Verifica si ya existe una entrada con el mismo nombre y correo electrónico.
+        for (const auto& entry : entries) {
+            if (strcmp(entry.name, userData.name.c_str()) == 0 && strcmp(entry.email, userData.email.c_str()) == 0) {
+                duplicate = true; // Marca como duplicado si se encuentra.
+                break;
             }
         }
+        // Si no es duplicado y hay espacio para más entradas.
+        if (!duplicate && entries.size() < MAX_ENTRIES) {
+            Entry new_entry; // Crea una nueva entrada.
+            strncpy(new_entry.name, userData.name.c_str(), NAME_LENGTH - 1); // Copia el nombre.
+            new_entry.name[NAME_LENGTH - 1] = '\0'; // Asegura la terminación nula.
+            strncpy(new_entry.email, userData.email.c_str(), EMAIL_LENGTH - 1); // Copia el correo electrónico.
+            new_entry.email[EMAIL_LENGTH - 1] = '\0'; // Asegura la terminación nula.
+            entries.push_back(new_entry); // Agrega la nueva entrada al vector.
+
+            // Construye el cuerpo de la respuesta para una entrada guardada.
+            response_body = "Entrada guardada: " + std::string(new_entry.name) + ", " + new_entry.email;
+            response_stream << response_body; // Agrega el cuerpo a la respuesta.
+        } else if (duplicate) {
+            response_stream << "Entrada duplicada."; // Mensaje para entrada duplicada.
+        } else {
+            response_stream << "No se pueden almacenar más entradas."; // Mensaje si no hay espacio para más entradas.
+        }
+
     // Manejo de solicitudes GET.
     } else if (request.find("GET") != std::string::npos) {
         response_stream << "["; // Inicia la respuesta en formato JSON.
