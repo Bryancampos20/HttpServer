@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  http_server:
+    build: .
+    ports:
+      - "1708:1708"
+    command: ["./http_server"]
+
+  tests:
+    build: .
+    command: ["./tests"]
+
