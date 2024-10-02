@@ -1,16 +1,26 @@
-CXX = g++                   
-CXXFLAGS = -Iinclude -pthread 
-SRC = src/server.cpp src/request_handler.cpp 
-OBJ = $(SRC:.cpp=.o)       
-TARGET = http_server        
+# Variables
+CXX = g++
+CXXFLAGS = -std=c++14 -pthread -g
+GTEST_DIR = /usr/src/gtest
+GTEST_LIB = -lgtest -lgtest_main
 
-all: $(TARGET)
+# Archivos fuente
+SRC = src/request_handler.cpp src/server.cpp   # Para el servidor 
+TEST_SRC = src/tests.cpp src/request_handler.cpp # Para los tests 
 
-$(TARGET): $(OBJ)
-	$(CXX) -o $@ $^ $(CXXFLAGS)
+# Ejecutables
+HTTP_SERVER = http_server
+TESTS = tests
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+all: $(HTTP_SERVER) $(TESTS)
+
+$(HTTP_SERVER): $(SRC)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(GTEST_LIB)
+
+$(TESTS): $(TEST_SRC)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(GTEST_LIB)
 
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -f $(HTTP_SERVER) $(TESTS)
+
+.PHONY: all clean
