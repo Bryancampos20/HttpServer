@@ -5,7 +5,7 @@
 class HttpServerTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        entries.clear(); // Limpiar las entradas antes de cada prueba 
+        entries.clear(); 
     }
 };
 
