@@ -2,8 +2,13 @@
 
 # Para ejecutarlo
 
-docker build -t http_server .
-docker run -p 1708:1708 http_server
+docker-compose build 
+
+# Para ejecutar el servidor 
+docker-compose up http_server
+# Para ejecutar solo las pruebas
+docker-compose up tests
+
 
 # Para probar el get y post
 http://localhost:1708
