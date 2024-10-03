@@ -123,19 +123,13 @@ std::string process_request(const std::string &request, const std::string &sessi
 
         // Si los datos de usuario fueron extraídos
         if (!userData.name.empty() && !userData.email.empty()) {
-            response_stream << "Debug - Nombre extraído: " << userData.name << "\n";
-            response_stream << "Debug - Correo extraído: " << userData.email << "\n";
 
             bool found = false;
 
-            response_stream << "Debug - Comenzando la búsqueda de la entrada...\n";
-
             // Busca la entrada con el nombre y correo especificados
             for (auto it = entries.begin(); it != entries.end(); ++it) {
-                response_stream << "Debug - Comparando con: " << it->name << ", " << it->email << "\n";
                 if (strcmp(it->name, userData.name.c_str()) == 0 && strcmp(it->email, userData.email.c_str()) == 0) {
                     entries.erase(it);  // Elimina la entrada
-                    response_stream << "Debug - Entrada encontrada y eliminada.\n";
                     found = true;
                     break;
                 }
@@ -143,7 +137,7 @@ std::string process_request(const std::string &request, const std::string &sessi
 
             // Respuesta final
             if (found) {
-                response_stream << "Entrada eliminada: " << userData.name << ", " << userData.email;
+                response_stream << "Entrada eliminada.";
             } else {
                 response_stream << "Entrada no encontrada.";
             }

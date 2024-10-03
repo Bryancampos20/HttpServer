@@ -101,6 +101,45 @@ TEST_F(HttpServerTest, AddDuplicateEntry_ReturnsDuplicateMessage) {
     // Verifica que la respuesta indique que hay un duplicado
     EXPECT_NE(response.find("Entrada duplicada."), std::string::npos);
 }
+//------Pruebas con DELETE
+
+TEST_F(HttpServerTest, DeleteEntry_ReturnsSuccessMessage) {
+    // Datos para ingresar (ahora con el campo email incluido)
+    UserData userData;
+    userData.name = "Pamela González";
+    userData.email = "pamela@example.com";
+
+    // Simulamos la solicitud POST para agregar una entrada completa
+    std::string post_request = "POST /entries HTTP/1.1\r\n\r\n"
+                               "{\"name\":\"" + userData.name + "\", \"email\":\"" + userData.email + "\"}";
+    std::string post_response = process_request(post_request, generate_session_id());
+
+    // Simulamos la solicitud DELETE para eliminar la misma entrada
+    std::string delete_request = "DELETE /entries HTTP/1.1\r\n\r\n"
+                                 "{\"name\":\"" + userData.name + "\", \"email\":\"" + userData.email + "\"}";
+    std::string delete_response = process_request(delete_request, generate_session_id());
+
+    // Verificar que la respuesta DELETE contenga el mensaje esperado
+    EXPECT_NE(delete_response.find("Entrada eliminada."), std::string::npos);
+}
+
+TEST_F(HttpServerTest, DeleteEntry_ReturnsFailMessage) {
+    // Datos para ingresar (ahora con el campo email incluido)
+    UserData userData;
+    userData.name = "Pamela González";
+    userData.email = "pamela@example.com";
+
+    // Simulamos la solicitud DELETE para eliminar la misma entrada
+    std::string delete_request = "DELETE /entries HTTP/1.1\r\n\r\n"
+                                 "{\"name\":\"" + userData.name + "\", \"email\":\"" + userData.email + "\"}";
+    std::string delete_response = process_request(delete_request, generate_session_id());
+
+    // Verificar que la respuesta DELETE contenga el mensaje esperado
+    EXPECT_NE(delete_response.find("Entrada no encontrada."), std::string::npos);
+}
+
+
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
