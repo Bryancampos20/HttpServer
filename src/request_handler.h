@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <mutex> 
 
 #define NAME_LENGTH 50 //Longitud máxima para los nombres.
 #define EMAIL_LENGTH 50 //Longitud máxima para los correos electrónicos.
@@ -23,6 +24,9 @@ struct UserData {
 
 //Para los tests
 extern std::vector<Entry> entries; 
+
+//Se declarar el mutex
+extern std::mutex entries_mutex; 
 
 std::string generate_session_id();
 std::string process_request(const std::string &request, const std::string &session_id);
