@@ -138,6 +138,7 @@ TEST_F(HttpServerTest, DeleteEntry_ReturnsFailMessage) {
     // Verificar que la respuesta DELETE contenga el mensaje esperado
     EXPECT_NE(delete_response.find("Entrada no encontrada."), std::string::npos);
 }
+
 //------Pruebas con gestión de cookies 
 
 TEST_F(HttpServerTest, CreatesAndUsesSessionCookie) {
