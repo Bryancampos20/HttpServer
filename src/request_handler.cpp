@@ -6,12 +6,15 @@
 #include <vector>           
 #include <string>           
 #include <sstream>          
+#include <mutex> 
 
 #define SESSION_ID_LENGTH 32 // Define la longitud del ID de sesión.
 #define MAX_ENTRIES 200      // Define el número máximo de entradas que se pueden almacenar.
 
 // Vector que almacena todas las entradas del usuario.
 std::vector<Entry> entries;
+
+std::mutex entries_mutex; // Referenciamos el mutex
 
 // Función para generar un ID de sesión aleatorio.
 std::string generate_session_id() {
@@ -22,8 +25,6 @@ std::string generate_session_id() {
     
     return session_id; 
 }
-
-#include <string>
 
 // Función para extraer el nombre, correo, updated_name y updated_email del cuerpo de la solicitud
 UserData extract_name_and_email(const std::string& request) {
@@ -70,7 +71,7 @@ std::string process_request(const std::string &request, const std::string &sessi
     std::ostringstream response_stream; // Flujo de salida para construir la respuesta.
     std::string response_body; // Cuerpo de la respuesta.
 
-// Verifica si la solicitud es de tipo POST.
+    // Verifica si la solicitud es de tipo POST.
     if (request.find("POST") != std::string::npos) {
         // Extrae los datos del JSON en el cuerpo de la solicitud
         UserData userData = extract_name_and_email(request);
@@ -80,7 +81,9 @@ std::string process_request(const std::string &request, const std::string &sessi
             response_stream << "Formato de datos inválido.";
         } else {
             bool duplicate = false; // Bandera para verificar si hay entradas duplicadas.
-
+            
+            std::lock_guard<std::mutex> lock(entries_mutex); // Bloquea el mutex antes de acceder a 'entries'
+            
             // Verifica si ya existe una entrada con el mismo nombre y correo electrónico.
             for (const auto& entry : entries) {
                 if (strcmp(entry.name, userData.name.c_str()) == 0 && strcmp(entry.email, userData.email.c_str()) == 0) {
@@ -104,10 +107,13 @@ std::string process_request(const std::string &request, const std::string &sessi
                 response_stream << "No se pueden almacenar más entradas."; // Mensaje si no hay espacio para más entradas.
             }
         }
+
     // Manejo de solicitudes GET.
     } else if (request.find("GET") != std::string::npos) {
         response_stream << "["; // Inicia la respuesta en formato JSON.
         
+        std::lock_guard<std::mutex> lock(entries_mutex); // Bloquea el mutex antes de acceder a 'entries'
+
         // Recorre todas las entradas y las agrega al flujo de respuesta.
         for (size_t i = 0; i < entries.size(); i++) {
             if (i > 0) response_stream << ","; // Agrega una coma entre entradas.
@@ -125,6 +131,8 @@ std::string process_request(const std::string &request, const std::string &sessi
         if (!userData.name.empty() && !userData.email.empty()) {
 
             bool found = false;
+
+            std::lock_guard<std::mutex> lock(entries_mutex); // Bloquea el mutex antes de acceder a 'entries'
 
             // Busca la entrada con el nombre y correo especificados
             for (auto it = entries.begin(); it != entries.end(); ++it) {
@@ -159,6 +167,8 @@ std::string process_request(const std::string &request, const std::string &sessi
             
             bool found = false;
 
+            std::lock_guard<std::mutex> lock(entries_mutex); // Bloquea el mutex antes de acceder a 'entries'
+
             response_stream << "Debug - Comenzando la búsqueda de la entrada...\n";
 
             // Busca la entrada con el nombre y correo especificados
@@ -178,6 +188,7 @@ std::string process_request(const std::string &request, const std::string &sessi
                     break;
                 }
             }
+
             // Respuesta final
             if (found) {
                 response_stream << "Entrada actualizada: " << userData.name << ", " 
@@ -206,6 +217,8 @@ std::string process_request(const std::string &request, const std::string &sessi
             
             bool found = false;
 
+            std::lock_guard<std::mutex> lock(entries_mutex); // Bloquea el mutex antes de acceder a 'entries'
+
             response_stream << "Debug - Comenzando la búsqueda de la entrada...\n";
 
             // Busca la entrada con el nombre y correo especificados
@@ -225,7 +238,7 @@ std::string process_request(const std::string &request, const std::string &sessi
                     break;
                 }
             }
-
+ 
             // Si no se encuentra la entrada, la crea
             if (!found) {
                 if (entries.size() < MAX_ENTRIES) {
@@ -268,4 +281,5 @@ std::string process_request(const std::string &request, const std::string &sessi
 
     return http_response;  
 }
+
 
