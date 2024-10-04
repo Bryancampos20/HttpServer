@@ -41,7 +41,7 @@ docker-compose up http_server
 ```
 El servidor estará escuchando en el puerto 1708.
 
-### 5. Ejecutar pruebas
+### 4. Ejecutar pruebas
 Para correr las pruebas unitarias:
 ```bash
 docker-compose up tests
