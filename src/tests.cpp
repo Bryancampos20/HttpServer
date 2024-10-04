@@ -140,7 +140,7 @@ TEST_F(HttpServerTest, DeleteEntry_ReturnsFailMessage) {
 }
 
 
-//------Pruebas con PUT & UPDATE
+//------Pruebas con PUT 
 
 TEST_F(HttpServerTest, PutEntry_ReturnsSuccessMessage) {
     // Datos para ingresar (ahora con el campo email incluido)
@@ -181,6 +181,30 @@ TEST_F(HttpServerTest, PutEntry_ReturnsNewSuccessMessage) {
     EXPECT_NE(put_response.find("Nueva entrada creada."), std::string::npos);
 }
 
+
+//------Pruebas con UPDATE 
+
+TEST_F(HttpServerTest, UpdateEntry_ReturnsSuccessMessage) {
+    // Datos para ingresar (ahora con el campo email incluido)
+    UserData userData;
+    userData.name = "Pamela González";
+    userData.email = "pamela@example.com";
+    userData.updated_name = "Bryan Campos";
+    userData.updated_email = "bryan@example.com";
+
+    // Simulamos la solicitud POST para agregar una entrada completa
+    std::string post_request = "POST /entries HTTP/1.1\r\n\r\n"
+                               "{\"name\":\"" + userData.name + "\", \"email\":\"" + userData.email + "\", \"updated_name\":\"" + userData.updated_name + "\", \"updated_email\":\"" + userData.updated_email + "\"}";
+    std::string post_response = process_request(post_request, generate_session_id());
+
+    // Simulamos la solicitud PUT para eliminar la misma entrada
+    std::string update_request = "UPDATE /entries HTTP/1.1\r\n\r\n"
+                                 "{\"name\":\"" + userData.name + "\", \"email\":\"" + userData.email + "\", \"updated_name\":\"" + userData.updated_name + "\", \"updated_email\":\"" + userData.updated_email + "\"}";
+    std::string update_response = process_request(update_request, generate_session_id());
+
+    // Verificar que la respuesta PUT contenga el mensaje esperado
+    EXPECT_NE(update_response.find("Entrada actualizada."), std::string::npos);
+}
 //------Pruebas con gestión de cookies 
 
 TEST_F(HttpServerTest, CreatesAndUsesSessionCookie) {
