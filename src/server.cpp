@@ -30,7 +30,7 @@ void *handle_request(void *client_socket) {
             *end = '\0'; // Termina la cadena en el punto final de la cookie.
         }
     } else {
-        session_id = "new_session_id"; // Si no hay cookie, se define un nuevo session_id por defecto.
+        session_id = generate_session_id();; // Si no hay cookie, se define un nuevo session_id.
     }
 
     // Procesa la solicitud y genera una respuesta.
