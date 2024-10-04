@@ -154,12 +154,6 @@ std::string process_request(const std::string &request, const std::string &sessi
     } else if (request.find("UPDATE") != std::string::npos) {
         // Llamada a la función para extraer nombre, correo, updated_name y updated_email
         UserData userData = extract_name_and_email(request);
-        
-        // Depuración
-        response_stream << "Debug - Nombre extraído: " << userData.name << "\n";
-        response_stream << "Debug - Correo extraído: " << userData.email << "\n";
-        response_stream << "Debug - updated_name extraído: " << userData.updated_name << "\n";
-        response_stream << "Debug - updated_email extraído: " << userData.updated_email << "\n";
 
         // Si los datos de usuario fueron extraídos
         if (!userData.name.empty() && !userData.email.empty() &&
@@ -169,21 +163,17 @@ std::string process_request(const std::string &request, const std::string &sessi
 
             std::lock_guard<std::mutex> lock(entries_mutex); // Bloquea el mutex antes de acceder a 'entries'
 
-            response_stream << "Debug - Comenzando la búsqueda de la entrada...\n";
-
             // Busca la entrada con el nombre y correo especificados
             for (auto it = entries.begin(); it != entries.end(); ++it) {
-                response_stream << "Debug - Comparando con: " << it->name << ", " << it->email << "\n";
                 if (strcmp(it->name, userData.name.c_str()) == 0 &&
                     strcmp(it->email, userData.email.c_str()) == 0) {
-                    
+
                     // Actualiza los campos con los nuevos valores
                     strncpy(it->name, userData.updated_name.c_str(), NAME_LENGTH - 1);
                     it->name[NAME_LENGTH - 1] = '\0';
+
                     strncpy(it->email, userData.updated_email.c_str(), EMAIL_LENGTH - 1);
                     it->email[EMAIL_LENGTH - 1] = '\0';
-                    
-                    response_stream << "Debug - Entrada encontrada y actualizada.\n";
                     found = true;
                     break;
                 }
@@ -191,12 +181,9 @@ std::string process_request(const std::string &request, const std::string &sessi
 
             // Respuesta final
             if (found) {
-                response_stream << "Entrada actualizada: " << userData.name << ", " 
-                                << userData.email << " -> " 
-                                << userData.updated_name << ", " 
-                                << userData.updated_email;
+                response_stream << "Entrada actualizada.";
             } else {
-                response_stream << "Entrada no encontrada.";
+                response_stream << "Entrada no encontrada";
             }
         } else {
             response_stream << "Formato de datos inválido.";
@@ -204,12 +191,6 @@ std::string process_request(const std::string &request, const std::string &sessi
     } else if (request.find("PUT") != std::string::npos) {
         // Llamada a la función para extraer nombre, correo, updated_name y updated_email
         UserData userData = extract_name_and_email(request);
-        
-        // Depuración
-        response_stream << "Debug - Nombre extraído: " << userData.name << "\n";
-        response_stream << "Debug - Correo extraído: " << userData.email << "\n";
-        response_stream << "Debug - updated_name extraído: " << userData.updated_name << "\n";
-        response_stream << "Debug - updated_email extraído: " << userData.updated_email << "\n";
 
         // Si los datos de usuario fueron extraídos
         if (!userData.name.empty() && !userData.email.empty() &&
@@ -219,11 +200,8 @@ std::string process_request(const std::string &request, const std::string &sessi
 
             std::lock_guard<std::mutex> lock(entries_mutex); // Bloquea el mutex antes de acceder a 'entries'
 
-            response_stream << "Debug - Comenzando la búsqueda de la entrada...\n";
-
             // Busca la entrada con el nombre y correo especificados
             for (auto it = entries.begin(); it != entries.end(); ++it) {
-                response_stream << "Debug - Comparando con: " << it->name << ", " << it->email << "\n";
                 if (strcmp(it->name, userData.name.c_str()) == 0 &&
                     strcmp(it->email, userData.email.c_str()) == 0) {
                     
@@ -233,7 +211,6 @@ std::string process_request(const std::string &request, const std::string &sessi
                     strncpy(it->email, userData.updated_email.c_str(), EMAIL_LENGTH - 1);
                     it->email[EMAIL_LENGTH - 1] = '\0';
                     
-                    response_stream << "Debug - Entrada encontrada y actualizada.\n";
                     found = true;
                     break;
                 }
@@ -247,23 +224,16 @@ std::string process_request(const std::string &request, const std::string &sessi
                     new_entry.name[NAME_LENGTH - 1] = '\0';  // Asegura la terminación nula
                     strncpy(new_entry.email, userData.updated_email.c_str(), EMAIL_LENGTH - 1);
                     new_entry.email[EMAIL_LENGTH - 1] = '\0';  // Asegura la terminación nula
-                    
+                    response_stream << "Nueva entrada creada.";
                     // Agrega la nueva entrada al vector
                     entries.push_back(new_entry);
 
-                    response_stream << "Nueva entrada creada: " 
-                                    << new_entry.name << ", " 
-                                    << new_entry.email;
                 } else {
                     response_stream << "No se pueden almacenar más entradas.";
                 }
             } else {
                 // Respuesta final si la entrada fue actualizada
-                response_stream << "Entrada actualizada: " 
-                                << userData.name << ", " 
-                                << userData.email << " -> " 
-                                << userData.updated_name << ", " 
-                                << userData.updated_email;
+                response_stream << "Entrada actualizada.";
             }
         } else {
             response_stream << "Formato de datos inválido.";

@@ -139,6 +139,48 @@ TEST_F(HttpServerTest, DeleteEntry_ReturnsFailMessage) {
     EXPECT_NE(delete_response.find("Entrada no encontrada."), std::string::npos);
 }
 
+
+//------Pruebas con PUT & UPDATE
+
+TEST_F(HttpServerTest, PutEntry_ReturnsSuccessMessage) {
+    // Datos para ingresar (ahora con el campo email incluido)
+    UserData userData;
+    userData.name = "Pamela González";
+    userData.email = "pamela@example.com";
+    userData.updated_name = "Bryan Campos";
+    userData.updated_email = "bryan@example.com";
+
+    // Simulamos la solicitud POST para agregar una entrada completa
+    std::string post_request = "POST /entries HTTP/1.1\r\n\r\n"
+                               "{\"name\":\"" + userData.name + "\", \"email\":\"" + userData.email + "\", \"updated_name\":\"" + userData.updated_name + "\", \"updated_email\":\"" + userData.updated_email + "\"}";
+    std::string post_response = process_request(post_request, generate_session_id());
+
+    // Simulamos la solicitud PUT para eliminar la misma entrada
+    std::string put_request = "PUT /entries HTTP/1.1\r\n\r\n"
+                                 "{\"name\":\"" + userData.name + "\", \"email\":\"" + userData.email + "\", \"updated_name\":\"" + userData.updated_name + "\", \"updated_email\":\"" + userData.updated_email + "\"}";
+    std::string put_response = process_request(put_request, generate_session_id());
+
+    // Verificar que la respuesta PUT contenga el mensaje esperado
+    EXPECT_NE(put_response.find("Entrada actualizada."), std::string::npos);
+}
+
+TEST_F(HttpServerTest, PutEntry_ReturnsNewSuccessMessage) {
+    // Datos para ingresar
+    UserData userData;
+    userData.name = "Pamela González";
+    userData.email = "pamela@example.com";
+    userData.updated_name = "Bryan Campos";
+    userData.updated_email = "bryan@example.com";
+
+    // Simulamos la solicitud PUT para crear la misma entrada
+    std::string put_request = "PUT /entries HTTP/1.1\r\n\r\n"
+                                 "{\"name\":\"" + userData.name + "\", \"email\":\"" + userData.email + "\", \"updated_name\":\"" + userData.updated_name + "\", \"updated_email\":\"" + userData.updated_email + "\"}";
+    std::string put_response = process_request(put_request, generate_session_id());
+
+    // Verificar que la respuesta PUT contenga el mensaje esperado
+    EXPECT_NE(put_response.find("Nueva entrada creada."), std::string::npos);
+}
+
 //------Pruebas con gestión de cookies 
 
 TEST_F(HttpServerTest, CreatesAndUsesSessionCookie) {
