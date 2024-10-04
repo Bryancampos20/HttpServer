@@ -14,7 +14,7 @@ Este proyecto implementa un servidor HTTP v1.x funcional desde cero, utilizando 
   - Docker
   - Docker Compose
   - Makefile
-  - Google Test para pruebas unitarias
+  - Postman
 
 ## Estructura del proyecto
 - **server.cpp**: Módulo principal del servidor, donde se manejan las conexiones de red y se crean los hilos para atender las solicitudes.
