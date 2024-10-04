@@ -63,5 +63,6 @@ Las pruebas cubren las principales operaciones del servidor:
 - **POST**: Añade una nueva entrada.
 - **GET**: Recupera todas las entradas.
 - **DELETE**: Elimina una entrada existente.
-- **PUT**: Actualiza una entrada existente.
+- **PUT**: Crea o modifica una entrada existente.
+- **UPDATE**: Actualiza una entrada existente.
 - **Manejo de cookies**: Verifica que las cookies se gestionan correctamente.
