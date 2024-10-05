@@ -1,7 +1,8 @@
-<font size="5">**Proyecto 1 Implementación de Servidor HTTP**</font>
+<font size="5">**Proyecto 1: Implementación de Servidor HTTP**</font>
 
-<font size="3">Integrantes:<br>Kenneth Chacón<br>Pamela González<br>Bryan Campos</font><br><br>
+<font size="4">**Principios de Sistemas Operativos**</font>
 
+<font size="3">**Integrantes:**<br>Kenneth Chacón<br>Pamela González<br>Bryan Campos</font><br><br>
 
 # **Descripción del diseño del servidor**
 
